@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="/bootstrap/dist/css/bootstrap.css">
+    <style>
+        .user{
+            color:blue;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+<div class="panel">
+    <div class="col-md-12">
+        <div class="panel panel-primary">
+            <div class="panel-heading">
+                <h3>欢迎来到我的聊天室</h3>
+                <button class="btn btn-success" onclick="join('green')">青春记忆</button>
+                <button class="btn btn-danger" onclick="join('red')">青春记忆</button>
+            </div>
+            <div class="panel-body">
+                <ul onclick="handleClick(event)" class="list-group" id="messages">
+
+                </ul>
+            </div>
+            <div class="panel-footer">
+                <form>
+                    <div class="form-group">
+                        <label for="content">内容</label>
+                        <input type="text" id="content" class="form-control">
+                    </div>
+                    <div class="form-group">
+                       <button type="button" class="btn btn-primary" onclick="send()">发言</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    var messagesUl=document.querySelector('#messages');//先得到UL
+    var contentInput=document.querySelector('#content');
+
+ //引入此脚本后就会在window下增加一个io属性
+    var socket=io();
+    socket.on('connect',function(){
+      //  socket.send('你好')
+        socket.emit('getAllMessages')//向服务器发送消息，类型是getAllMessages，发的消息类型名称是可以自定义的，叫什么都可以
+    })
+ function format(msgObj){
+        return `<span class="user">${msgObj.username}</span>:${msgObj.content}<button data-id="${msgObj._id}" class="btn btn-danger">删除</button>
+ <span class="pull-right">${msgObj.createAt}</span>`
+ }
+    //监听服务器发过来的消息
+    socket.on('message',function(msgObj){
+
+
+      var li=document.createElement('li');//创建一个LI元素
+      li.innerHTML=`${ format(msgObj)}`;//为LI元素赋值
+      li.className='list-group-item';//为    LI增加类名
+      messagesUl.appendChild(li);//UL里添加LI
+
+
+
+    })
+
+function send(){//当点击按钮的时候执行此方法
+         var content=contentInput.value;
+         //把此消息发送给服务器
+         socket.send(content);
+    contentInput.value='';
+}
+socket.on('allMessages',function(messages){
+    var html='';
+    messages.forEach(function(message){
+        html+=`<li class="list-group-item" id="msg_${message._id}">${format(message)}
+</li>`
+
+    })
+    messagesUl.innerHTML=html;
+})
+
+function handleClick (e){
+    if(e.target.className=='user'){
+        var username=e.target.innerHTML;
+        contentInput.value=`@${username}`
+    }else if(e.target.className=='btn btn-danger'){
+        var id=e.target.dataset.id;
+        socket.emit('delete',id);
+    }
+}
+
+function join(roomName){
+    socket.emit('join',roomName);
+
+}
+socket.on('deleted',function(id){
+  var deleteLi=  document.querySelector(`#msg_${id}`);
+    deleteLi.parentNode.removeChild(deleteLi)
+})
+
+</script>
+
+</body>
+</html>

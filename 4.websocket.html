@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<div id="clock"></div>
+<script>
+    //websocket没有跨域问题
+    var socket=new WebSocket('ws://localhost:8080');
+    socket.onopen=function(){
+        console.log('success');
+        socket.send('')
+    }
+    socket.onmessage=function(event){
+        clock.innerHTML=event.data;
+       // console.log(event.data);//event.data是事件对象的data属性，就是消息内容
+    }
+
+
+</script>
+
+</body>
+</html>
